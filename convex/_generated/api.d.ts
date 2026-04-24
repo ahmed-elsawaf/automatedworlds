@@ -8,8 +8,21 @@
  * @module
  */
 
+import type * as admin from "../admin.js";
+import type * as categories from "../categories.js";
+import type * as codeAssets from "../codeAssets.js";
+import type * as customizations from "../customizations.js";
+import type * as discounts from "../discounts.js";
+import type * as helpers from "../helpers.js";
+import type * as http from "../http.js";
 import type * as ideas from "../ideas.js";
-import type * as seed from "../seed.js";
+import type * as notifications from "../notifications.js";
+import type * as orders from "../orders.js";
+import type * as polarwebhook from "../polarwebhook.js";
+import type * as reviews from "../reviews.js";
+import type * as seed_v3 from "../seed_v3.js";
+import type * as storage from "../storage.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -18,8 +31,21 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  admin: typeof admin;
+  categories: typeof categories;
+  codeAssets: typeof codeAssets;
+  customizations: typeof customizations;
+  discounts: typeof discounts;
+  helpers: typeof helpers;
+  http: typeof http;
   ideas: typeof ideas;
-  seed: typeof seed;
+  notifications: typeof notifications;
+  orders: typeof orders;
+  polarwebhook: typeof polarwebhook;
+  reviews: typeof reviews;
+  seed_v3: typeof seed_v3;
+  storage: typeof storage;
+  users: typeof users;
 }>;
 
 /**

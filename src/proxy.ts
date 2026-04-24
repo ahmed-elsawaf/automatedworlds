@@ -6,6 +6,8 @@ const isPublicRoute = createRouteMatcher([
     '/api/(.*)', 
     '/trpc/(.*)', 
     '/', 
+    '/browse(.*)',
+    '/ideas/(.*)',
     '/blog(.*)',
     '/api/portal(.*)',
     '/about',
@@ -15,7 +17,7 @@ const isPublicRoute = createRouteMatcher([
     '/pricing',
     '/privacy',
     '/api/inngest(.*)',
-    '/api/webhooks/polar(.*)' // Add this line for Polar webhooks
+    '/api/webhooks/polar(.*)' // Polar webhooks
 ])
 
 export default clerkMiddleware(async (auth, req) => {

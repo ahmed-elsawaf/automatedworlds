@@ -6,7 +6,18 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactCompiler: true,
-  
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.convex.site',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.convex.cloud',
+      },
+    ],
+  },
 };
 
 export default nextConfig;
