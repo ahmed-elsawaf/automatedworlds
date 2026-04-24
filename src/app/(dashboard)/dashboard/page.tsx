@@ -75,11 +75,20 @@ export default function DashboardHome() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-10">
 
       {/* Welcome */}
-      <div>
-        <h1 className="text-2xl font-bold mb-1">Welcome back, {firstName} 👋</h1>
-        <p className="text-muted-foreground text-sm">
-          Here&apos;s a snapshot of your activity on AutomatedWorlds.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold mb-1">Welcome back, {firstName} 👋</h1>
+          <p className="text-muted-foreground text-sm">
+            Here&apos;s a snapshot of your activity on AutomatedWorlds.
+          </p>
+        </div>
+        {me?.role === "admin" && (
+          <Button asChild variant="outline" className="rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary gap-2">
+            <Link href="/admin">
+              <Zap className="w-4 h-4" /> Admin Panel
+            </Link>
+          </Button>
+        )}
       </div>
 
       {/* Stats */}

@@ -13,14 +13,11 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 
-/* ─── Types ─────────────────────────────────────────────────────────────── */
-
 export type IntentAction =
   | "save_idea"
   | "unsave_idea"
   | "buy_code"
   | "buy_custom"
-  | "buy_exclusive"
   | "join_waitlist";
 
 export interface PendingIntent {

@@ -78,7 +78,7 @@ export function AuthPromptBanner({
     <div
       className={cn(
         "relative rounded-2xl border border-primary/25 overflow-hidden",
-        "bg-gradient-to-br from-primary/8 via-primary/5 to-brand-cyan/5",
+        "bg-linear-to-br from-primary/8 via-primary/5 to-brand-cyan/5",
         "p-5 space-y-3",
         className
       )}

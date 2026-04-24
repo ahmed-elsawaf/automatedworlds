@@ -26,12 +26,20 @@ import { requireUser, requireAdmin, now, writeAuditLog } from "./helpers";
  * Called securely by the client on auth load.
  */
 export const storeUser = mutation({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    email: v.optional(v.string()),
+    name: v.optional(v.string()),
+    profileImageUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error("Called storeUser without authentication present");
     }
+
+    const email = args.email ?? identity.email ?? "";
+    const name = args.name ?? identity.name ?? "Anonymous";
+    const avatarUrl = args.profileImageUrl ?? identity.pictureUrl;
 
     const existing = await ctx.db
       .query("users")
@@ -39,14 +47,17 @@ export const storeUser = mutation({
       .unique();
 
     if (existing) {
-      // Merge updates if name or picture changed in Clerk
-      if (
-        existing.name !== identity.name ||
-        existing.avatarUrl !== identity.pictureUrl
-      ) {
+      // Merge updates if name, picture, or email changed/was missing
+      const shouldUpdate = 
+        existing.name !== name ||
+        existing.avatarUrl !== avatarUrl ||
+        (email && existing.email !== email);
+
+      if (shouldUpdate) {
         await ctx.db.patch(existing._id, {
-          name: identity.name ?? existing.name,
-          avatarUrl: identity.pictureUrl ?? existing.avatarUrl,
+          name: name ?? existing.name,
+          avatarUrl: avatarUrl ?? existing.avatarUrl,
+          email: email || existing.email,
           updatedAt: now(),
         });
       }
@@ -56,9 +67,9 @@ export const storeUser = mutation({
     // New user signup via client sync
     return await ctx.db.insert("users", {
       clerkId: identity.subject,
-      email: identity.email ?? "",
-      name: identity.name ?? "Anonymous",
-      avatarUrl: identity.pictureUrl,
+      email: email,
+      name: name,
+      avatarUrl: avatarUrl,
       role: "member",
       plan: "free",
       totalPurchases: 0,

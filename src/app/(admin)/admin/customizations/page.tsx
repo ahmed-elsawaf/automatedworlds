@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { api } from "../../../../../../convex/_generated/api";
+import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Search, Wrench, ArrowRight, Eye, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
+import { api } from "../../../../../convex/_generated/api";
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
   submitted:    { label: "Submitted",   className: "bg-blue-500/15   text-blue-400 border-blue-500/20"   },
@@ -22,10 +23,11 @@ const STATUS_MAP: Record<string, { label: string; className: string }> = {
 };
 
 export default function AdminCustomizationsPage() {
+  const { isLoaded, isSignedIn } = useUser();
   const [search, setSearch] = useState("");
-  const requests = useQuery(api.admin.listCustomizationRequests, {
+  const requests = useQuery(api.customizations.adminListCustomizationRequests, isLoaded && isSignedIn ? {
     paginationOpts: { numItems: 50, cursor: null },
-  });
+  } : "skip");
 
   if (requests === undefined) {
     return (
@@ -36,8 +38,8 @@ export default function AdminCustomizationsPage() {
     );
   }
 
-  // Basic client filtering
-  const filtered = requests.page.filter((req) => {
+  // Basic client  // Filter logic
+  const filtered = requests.page.filter((req: any) => {
     const s = search.toLowerCase();
     const idea = (req as any).idea;
     const user = (req as any).user;
@@ -77,7 +79,7 @@ export default function AdminCustomizationsPage() {
       {/* Table */}
       <div className="rounded-2xl border border-border/60 overflow-hidden bg-card">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full text-sm text-left border-collapse">
             <thead className="text-xs uppercase bg-muted/50 text-muted-foreground">
               <tr>
                 <th className="px-6 py-4 font-semibold">Request</th>
@@ -96,7 +98,7 @@ export default function AdminCustomizationsPage() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((req) => {
+                filtered.map((req: any) => {
                   const s = STATUS_MAP[req.status] ?? { label: req.status, className: "bg-slate-500/10 text-slate-400" };
                   const idea = (req as any).idea;
                   const user = (req as any).user;

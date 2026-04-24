@@ -4,7 +4,6 @@ import { Zap, Globe } from "lucide-react";
 const LINKS = {
   product: [
     { label: "Browse Ideas", href: "/browse" },
-    { label: "Pricing", href: "/pricing" },
     { label: "How It Works", href: "/#how-it-works" },
     { label: "Changelog", href: "/changelog" },
   ],
@@ -29,8 +28,8 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2">
             <Link href="/" className="flex items-center gap-2 group mb-4">
-              <div className="w-8 h-8 rounded-lg brand-gradient flex items-center justify-center shadow-sm">
-                <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
+              <div className="w-8 h-8 rounded-lg brand-gradient flex items-center justify-center shadow-sm overflow-hidden">
+                <img src="/icon.png" alt="Logo" className="w-full h-full object-cover" />
               </div>
               <span className="font-bold text-lg tracking-tight">
                 <span className="brand-gradient-text">Automated</span>

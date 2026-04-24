@@ -19,7 +19,11 @@ export function SyncUserWithConvex() {
       // Small delay to ensure any transient Clerk states settle
       const timer = setTimeout(async () => {
         try {
-          await storeUser();
+          await storeUser({
+            email: user.primaryEmailAddress?.emailAddress,
+            name: user.fullName || undefined,
+            profileImageUrl: user.imageUrl || undefined,
+          });
           setSynced(true);
         } catch (error) {
           console.error("Failed to sync user with Convex:", error);

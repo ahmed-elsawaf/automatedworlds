@@ -11,7 +11,6 @@ import { Menu, X, Zap, ChevronRight } from "lucide-react";
 
 const NAV_LINKS = [
   { label: "Browse Ideas", href: "/browse" },
-  { label: "Pricing", href: "/pricing" },
   { label: "About", href: "/about" },
 ];
 
@@ -48,8 +47,8 @@ export function MarketingNav() {
             href="/"
             className="flex items-center gap-2 shrink-0 group"
           >
-            <div className="w-8 h-8 rounded-lg brand-gradient flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:brand-glow transition-all duration-200">
-              <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
+            <div className="w-8 h-8 rounded-lg brand-gradient flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:brand-glow transition-all duration-200 overflow-hidden">
+              <img src="/icon.png" alt="Logo" className="w-full h-full object-cover" />
             </div>
             <span className="font-bold text-lg tracking-tight hidden sm:block">
               <span className="brand-gradient-text">Automated</span>

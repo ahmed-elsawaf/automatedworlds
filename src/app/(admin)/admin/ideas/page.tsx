@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,11 @@ import { api } from "../../../../../convex/_generated/api";
 
 export default function AdminIdeasPage() {
   const [search, setSearch] = useState("");
-  const stats = useQuery(api.admin.getDashboardStats);
-  const ideas = useQuery(api.ideas.adminListIdeas, {
+  const { isAuthenticated } = useConvexAuth();
+  const stats = useQuery(api.admin.getDashboardStats, isAuthenticated ? {} : "skip");
+  const ideas = useQuery(api.ideas.adminListIdeas, isAuthenticated ? {
     paginationOpts: { numItems: 50, cursor: null },
-  });
+  } : "skip");
 
   if (ideas === undefined || stats === undefined) {
     return (

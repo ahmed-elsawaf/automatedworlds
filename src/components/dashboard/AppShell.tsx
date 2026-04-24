@@ -47,8 +47,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Logo */}
         <div className="h-14 flex items-center px-3 border-b border-border/60 shrink-0">
           <Link href="/" className="flex items-center gap-2.5 min-w-0">
-            <div className="w-7 h-7 rounded-lg brand-gradient flex items-center justify-center shrink-0">
-              <Zap className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+            <div className="w-7 h-7 rounded-lg brand-gradient flex items-center justify-center shrink-0 overflow-hidden">
+              <img src="/icon.png" alt="Logo" className="w-full h-full object-cover" />
             </div>
             {!collapsed && (
               <span className="font-bold text-sm tracking-tight truncate">
@@ -94,7 +94,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               href="/browse"
               className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors px-2 py-2 rounded-lg hover:bg-sidebar-accent"
             >
-              <Zap className="w-3.5 h-3.5" />
+              <div className="w-4 h-4 rounded-sm brand-gradient flex items-center justify-center overflow-hidden">
+                <img src="/icon.png" alt="Logo" className="w-full h-full object-cover" />
+              </div>
               Browse Ideas
             </Link>
           </div>

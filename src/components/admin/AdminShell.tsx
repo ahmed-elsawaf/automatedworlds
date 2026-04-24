@@ -5,7 +5,13 @@ import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { ModeToggle } from "@/components/ModeToggle";
-import {
+import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { useRouter } from "next/navigation";
+import { 
+  Loader2, ShieldAlert, ShieldCheck,
   LayoutDashboard,
   Lightbulb,
   ShoppingBag,
@@ -22,7 +28,6 @@ import {
   ChevronRight,
   ExternalLink,
 } from "lucide-react";
-import { useState } from "react";
 
 const NAV_GROUPS = [
   {
@@ -63,6 +68,67 @@ const NAV_GROUPS = [
   },
 ];
 
+
+
+function AdminGuard({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const user = useQuery(api.users.getMe);
+  const [isVerified, setIsVerified] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // Check session cache first
+    const cached = sessionStorage.getItem("aw_admin_verified");
+    if (cached === "true") {
+      setIsVerified(true);
+      return;
+    }
+
+    if (user === undefined) return; // Loading from Convex
+
+    if (user?.role === "admin") {
+      sessionStorage.setItem("aw_admin_verified", "true");
+      setIsVerified(true);
+    } else if (user !== undefined) {
+      // Not an admin or not found
+      setIsVerified(false);
+      // Give them a moment to see the "Access Denied" if we wanted, 
+      // but usually immediate redirect is better
+      router.push("/");
+    }
+  }, [user, router]);
+
+  if (isVerified === true) return <>{children}</>;
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] w-full gap-4">
+      {isVerified === false ? (
+        <>
+          <div className="w-16 h-16 rounded-3xl bg-rose-500/10 flex items-center justify-center text-rose-500 mb-2">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold">Access Denied</h2>
+          <p className="text-muted-foreground text-sm max-w-xs text-center">
+            You do not have the required permissions to access the admin dashboard.
+          </p>
+          <Button variant="outline" className="rounded-xl mt-4" onClick={() => router.push("/")}>
+            Back to Home
+          </Button>
+        </>
+      ) : (
+        <>
+          <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center text-primary mb-2 animate-pulse">
+            <ShieldCheck className="w-8 h-8" />
+          </div>
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+            Verifying Admin Session...
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -82,8 +148,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       >
         {/* Logo + Admin label */}
         <div className="h-14 flex items-center px-3 border-b border-white/8 shrink-0 gap-2.5">
-          <div className="w-7 h-7 rounded-lg brand-gradient flex items-center justify-center shrink-0">
-            <Zap className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+          <div className="w-8 h-8 rounded-lg brand-gradient flex items-center justify-center shrink-0 overflow-hidden">
+            <img src="/icon.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
           {!collapsed && (
             <div className="min-w-0">
@@ -167,7 +233,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <ModeToggle />
           <UserButton appearance={{ elements: { avatarBox: "w-8 h-8" } }} />
         </header>
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6">
+          <AdminGuard>
+            {children}
+          </AdminGuard>
+        </main>
       </div>
     </div>
   );

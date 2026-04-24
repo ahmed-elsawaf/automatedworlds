@@ -25,7 +25,7 @@ import {
 export const createReview = mutation({
   args: {
     ideaId: v.id("ideas"),
-    orderId: v.id("orders"),
+    orderId: v.optional(v.id("orders")),
     rating: v.number(),
     title: v.optional(v.string()),
     body: v.optional(v.string()),
@@ -38,24 +38,39 @@ export const createReview = mutation({
     if (args.rating < 1 || args.rating > 5)
       throw new Error("VALIDATION: Rating must be between 1 and 5.");
 
-    // Verify the order belongs to this user and is paid
-    const order = await ctx.db.get(args.orderId);
-    if (!order) throw new Error("NOT_FOUND: Order not found.");
-    if (order.userId !== user._id) throw new Error("FORBIDDEN");
-    if (order.status !== "paid") throw new Error("ORDER_NOT_PAID");
+    let finalOrderId = args.orderId;
 
-    // One review per order
+    // If no orderId provided, try to find one to mark as verified
+    if (!finalOrderId) {
+      const order = await ctx.db
+        .query("orders")
+        .withIndex("by_user_idea", (q) =>
+          q.eq("userId", user._id).eq("ideaId", args.ideaId)
+        )
+        .filter((q) => q.eq(q.field("status"), "paid"))
+        .first();
+      finalOrderId = order?._id;
+    } else {
+      // Verify the provided order belongs to this user
+      const order = await ctx.db.get(finalOrderId);
+      if (!order || order.userId !== user._id) {
+        finalOrderId = undefined; // Fallback to unverified if invalid
+      }
+    }
+
+    // One review per user per idea (regardless of order)
     const existing = await ctx.db
       .query("reviews")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .filter((q) => q.eq(q.field("orderId"), args.orderId))
+      .filter((q) => q.eq(q.field("ideaId"), args.ideaId))
       .first();
-    if (existing) throw new Error("CONFLICT: You have already reviewed this purchase.");
+    
+    if (existing) throw new Error("CONFLICT: You have already reviewed this idea.");
 
     const reviewId = await ctx.db.insert("reviews", {
       ideaId: args.ideaId,
       userId: user._id,
-      orderId: args.orderId,
+      orderId: finalOrderId,
       rating: args.rating,
       title: args.title,
       body: args.body,
@@ -338,5 +353,63 @@ export const adminListPendingReviews = query({
     );
 
     return { ...page, page: enriched };
+  },
+});
+
+export const getEligibleOrder = query({
+  args: { ideaId: v.id("ideas") },
+  handler: async (ctx, { ideaId }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!user) return null;
+
+    // Find a paid order for this idea
+    const orders = await ctx.db
+      .query("orders")
+      .withIndex("by_user_idea", (q) =>
+        q.eq("userId", user._id).eq("ideaId", ideaId)
+      )
+      .filter((q) => q.eq(q.field("status"), "paid"))
+      .collect();
+
+    for (const order of orders) {
+      // Check if this specific order has already been reviewed
+      const existing = await ctx.db
+        .query("reviews")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .filter((q) => q.eq(q.field("orderId"), order._id))
+        .first();
+
+      if (!existing) return order._id;
+    }
+
+    return null;
+  },
+});
+
+export const hasReviewed = query({
+  args: { ideaId: v.id("ideas") },
+  handler: async (ctx, { ideaId }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return false;
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+    if (!user) return false;
+
+    const existing = await ctx.db
+      .query("reviews")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .filter((q) => q.eq(q.field("ideaId"), ideaId))
+      .first();
+
+    return !!existing;
   },
 });

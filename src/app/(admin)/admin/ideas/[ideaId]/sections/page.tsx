@@ -32,8 +32,7 @@ export default function AdminIdeaSectionsPage() {
   const { ideaId } = useParams<{ ideaId: Id<"ideas"> }>();
   const router = useRouter();
 
-  const idea = useQuery(api.ideas.getIdeaById, { ideaId });
-  const rawSections = useQuery(api.ideas.getIdeaSections, { ideaId });
+  const idea = useQuery(api.ideas.adminGetIdea, { ideaId });
   
   const upsertSection = useMutation(api.ideas.upsertIdeaSection);
   const deleteSection = useMutation(api.ideas.deleteIdeaSection);
@@ -47,7 +46,7 @@ export default function AdminIdeaSectionsPage() {
   const [content, setContent] = useState("");
   const [isVisible, setIsVisible] = useState(true);
 
-  if (idea === undefined || rawSections === undefined) {
+  if (idea === undefined) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         <Button variant="ghost" className="gap-2 -ml-4" onClick={() => router.back()}>
@@ -67,7 +66,7 @@ export default function AdminIdeaSectionsPage() {
     );
   }
 
-  const sections = [...rawSections].sort((a, b) => a.sortOrder - b.sortOrder);
+  const sections = [...(idea.sections ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
 
   function openEditor(s?: any) {
     if (s) {

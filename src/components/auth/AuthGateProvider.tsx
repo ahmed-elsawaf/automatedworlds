@@ -22,7 +22,7 @@ import type { Id } from "../../../convex/_generated/dataModel";
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 
-function scrollToPurchasePanel(highlight?: "buy_code" | "buy_custom" | "buy_exclusive") {
+function scrollToPurchasePanel(highlight?: "buy_code" | "buy_custom") {
   const panel = document.getElementById("purchase-panel");
   if (!panel) return;
   panel.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -31,7 +31,6 @@ function scrollToPurchasePanel(highlight?: "buy_code" | "buy_custom" | "buy_excl
     const targetId = {
       buy_code: "purchase-option-code",
       buy_custom: "purchase-option-custom",
-      buy_exclusive: "purchase-option-exclusive",
     }[highlight];
     const el = document.getElementById(targetId);
     if (el) {
@@ -98,14 +97,6 @@ export function AuthGateProvider({ children }: { children: React.ReactNode }) {
             description: "Ready to request a custom build.",
           });
           scrollToPurchasePanel("buy_custom");
-          break;
-        }
-
-        case "buy_exclusive": {
-          toast.success("Welcome! 🎉", {
-            description: "Ready to claim the exclusive license.",
-          });
-          scrollToPurchasePanel("buy_exclusive");
           break;
         }
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
+import { useUser } from "@clerk/nextjs";
 import { api } from "../../../../../../convex/_generated/api";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -28,11 +29,12 @@ export default function AdminCustomizationDetailPage() {
   const { requestId } = useParams<{ requestId: Id<"customizationRequests"> }>();
   const router = useRouter();
   
+  const { isLoaded, isSignedIn } = useUser();
   const [msg, setMsg] = useState("");
   const [sending, setSending] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
 
-  const req = useQuery(api.customizations.getCustomizationRequestDetail, { requestId });
+  const req = useQuery(api.customizations.getCustomizationRequestDetail, isLoaded && isSignedIn ? { requestId } : "skip");
   
   const sendMessage = useMutation(api.customizations.sendCustomizationMessage);
   const updateStatus = useMutation(api.customizations.adminUpdateCustomizationStatus);
@@ -218,7 +220,7 @@ export default function AdminCustomizationDetailPage() {
             ) : (
               <div className="space-y-6">
                 {req.messages?.map((m: any) => {
-                  const isAdmin = m.isFromAdmin;
+                  const isAdmin = m.senderRole === "admin";
                   return (
                     <div key={m._id} className={cn("flex flex-col max-w-[85%]", !isAdmin ? "mr-auto" : "ml-auto items-end")}>
                       <div className={cn(

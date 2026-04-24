@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "convex/react";
+import { useUser } from "@clerk/nextjs";
 import { api } from "../../../../../../convex/_generated/api";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -17,10 +18,11 @@ export default function AdminUserDetailPage() {
   const { userId } = useParams<{ userId: Id<"users"> }>();
   const router = useRouter();
 
+  const { isLoaded, isSignedIn } = useUser();
   // We reuse listUsers for simplicity in this example or we'd ideally have getUserById in admin.ts
-  const users = useQuery(api.admin.listUsers, {
+  const users = useQuery(api.users.adminListUsers, isLoaded && isSignedIn ? {
     paginationOpts: { numItems: 100, cursor: null },
-  });
+  } : "skip");
 
   if (users === undefined) {
     return (
@@ -33,7 +35,7 @@ export default function AdminUserDetailPage() {
     );
   }
 
-  const user = users.page.find(u => u._id === userId);
+  const user = users.page.find((u: any) => u._id === userId);
 
   if (!user) {
     return (

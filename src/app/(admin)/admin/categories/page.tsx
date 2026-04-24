@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
+import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tag, Plus, Trash2, Save, GripVertical } from "lucide-react";
@@ -9,7 +10,8 @@ import { toast } from "sonner";
 import { api } from "../../../../../convex/_generated/api";
 
 export default function AdminCategoriesPage() {
-  const categories = useQuery(api.categories.listCategories, { activeOnly: false });
+  const { isLoaded, isSignedIn } = useUser();
+  const categories = useQuery(api.categories.listCategories, isLoaded && isSignedIn ? { activeOnly: false } : "skip");
   
   const createCategory = useMutation(api.categories.createCategory);
   const updateCategory = useMutation(api.categories.updateCategory);

@@ -16,6 +16,7 @@ import {
   query,
   internalMutation,
 } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import {
   requireUser,
   requireAdmin,
@@ -258,6 +259,9 @@ export const getIdeaBySlug = query({
     }
 
     const coverImageUrl = idea.coverImageId ? await ctx.storage.getUrl(idea.coverImageId) : null;
+    const screenshotUrls = await Promise.all(
+      (idea.screenshotIds ?? []).map((id) => ctx.storage.getUrl(id))
+    );
 
     return {
       ...idea,
@@ -267,6 +271,7 @@ export const getIdeaBySlug = query({
       hasPurchased,
       hasSaved,
       coverImageUrl,
+      screenshotUrls,
     };
   },
 });
@@ -336,7 +341,10 @@ export const adminGetIdea = query({
       .collect();
 
     const coverImageUrl = idea.coverImageId ? await ctx.storage.getUrl(idea.coverImageId) : null;
-    return { ...idea, sections, coverImageUrl };
+    const screenshotUrls = await Promise.all(
+      (idea.screenshotIds ?? []).map((id) => ctx.storage.getUrl(id))
+    );
+    return { ...idea, sections, coverImageUrl, screenshotUrls };
   },
 });
 
@@ -372,37 +380,11 @@ export const adminListIdeas = query({
   },
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MUTATIONS — admin CRUD
-// ─────────────────────────────────────────────────────────────────────────────
-
+// Admin CRUD mutations
 export const createIdea = mutation({
   args: {
     title: v.string(),
-    tagline: v.string(),
-    description: v.string(),
     categoryId: v.id("categories"),
-    tagIds: v.array(v.id("tags")),
-    targetAudience: v.string(),
-    problemStatement: v.string(),
-    solutionOverview: v.string(),
-    uniqueValueProp: v.string(),
-    revenueModel: v.string(),
-    revenueStreams: v.array(v.string()),
-    competitors: v.array(
-      v.object({
-        name: v.string(),
-        url: v.optional(v.string()),
-        weakness: v.string(),
-      })
-    ),
-    techStack: v.array(
-      v.object({
-        name: v.string(),
-        role: v.string(),
-        url: v.optional(v.string()),
-      })
-    ),
     difficulty: v.union(
       v.literal("beginner"),
       v.literal("intermediate"),
@@ -413,6 +395,34 @@ export const createIdea = mutation({
       v.literal("medium"),
       v.literal("high"),
       v.literal("very_high")
+    ),
+    // Fields that should be optional for a draft
+    tagline: v.optional(v.string()),
+    description: v.optional(v.string()),
+    tagIds: v.optional(v.array(v.id("tags"))),
+    targetAudience: v.optional(v.string()),
+    problemStatement: v.optional(v.string()),
+    solutionOverview: v.optional(v.string()),
+    uniqueValueProp: v.optional(v.string()),
+    revenueModel: v.optional(v.string()),
+    revenueStreams: v.optional(v.array(v.string())),
+    competitors: v.optional(
+      v.array(
+        v.object({
+          name: v.string(),
+          url: v.optional(v.string()),
+          weakness: v.string(),
+        })
+      )
+    ),
+    techStack: v.optional(
+      v.array(
+        v.object({
+          name: v.string(),
+          role: v.string(),
+          url: v.optional(v.string()),
+        })
+      )
     ),
     // Optional fields
     marketSize: v.optional(v.string()),
@@ -426,10 +436,8 @@ export const createIdea = mutation({
     screenshotIds: v.optional(v.array(v.id("_storage"))),
     coverImageId: v.optional(v.id("_storage")),
     priceCodeBase: v.optional(v.number()),
-    priceExclusive: v.optional(v.number()),
     priceCustomization: v.optional(v.number()),
     polarProductId: v.optional(v.string()),
-    polarExclusiveProductId: v.optional(v.string()),
     visibility: v.optional(
       v.union(
         v.literal("public"),
@@ -438,7 +446,6 @@ export const createIdea = mutation({
       )
     ),
     isFeatured: v.optional(v.boolean()),
-    isExclusive: v.optional(v.boolean()),
     metaTitle: v.optional(v.string()),
     metaDescription: v.optional(v.string()),
     ogImageId: v.optional(v.id("_storage")),
@@ -456,18 +463,18 @@ export const createIdea = mutation({
     const ideaId = await ctx.db.insert("ideas", {
       title: args.title,
       slug,
-      tagline: args.tagline,
-      description: args.description,
+      tagline: args.tagline ?? "",
+      description: args.description ?? "",
       categoryId: args.categoryId,
-      tagIds: args.tagIds,
-      targetAudience: args.targetAudience,
-      problemStatement: args.problemStatement,
-      solutionOverview: args.solutionOverview,
-      uniqueValueProp: args.uniqueValueProp,
-      revenueModel: args.revenueModel,
-      revenueStreams: args.revenueStreams,
-      competitors: args.competitors,
-      techStack: args.techStack,
+      tagIds: args.tagIds ?? [],
+      targetAudience: args.targetAudience ?? "",
+      problemStatement: args.problemStatement ?? "",
+      solutionOverview: args.solutionOverview ?? "",
+      uniqueValueProp: args.uniqueValueProp ?? "",
+      revenueModel: args.revenueModel ?? "",
+      revenueStreams: args.revenueStreams ?? [],
+      competitors: args.competitors ?? [],
+      techStack: args.techStack ?? [],
       difficulty: args.difficulty,
       roiPotential: args.roiPotential,
       marketSize: args.marketSize,
@@ -481,18 +488,16 @@ export const createIdea = mutation({
       screenshotIds: args.screenshotIds ?? [],
       coverImageId: args.coverImageId,
       priceCodeBase: args.priceCodeBase,
-      priceExclusive: args.priceExclusive,
       priceCustomization: args.priceCustomization,
       polarProductId: args.polarProductId,
-      polarExclusiveProductId: args.polarExclusiveProductId,
       visibility: args.visibility ?? "public",
       status: "draft",
       isFeatured: args.isFeatured ?? false,
-      isExclusive: args.isExclusive ?? false,
       isNew: true,
       viewCount: 0,
       saveCount: 0,
       purchaseCount: 0,
+      demoClickCount: 0,
       reviewCount: 0,
       metaTitle: args.metaTitle,
       metaDescription: args.metaDescription,
@@ -504,14 +509,14 @@ export const createIdea = mutation({
 
     // Sync ideaTags join table
     await Promise.all(
-      args.tagIds.map((tagId) =>
+      (args.tagIds ?? []).map((tagId) =>
         ctx.db.insert("ideaTags", { ideaId, tagId })
       )
     );
 
     // Increment tag usage counts
     await Promise.all(
-      args.tagIds.map(async (tagId) => {
+      (args.tagIds ?? []).map(async (tagId) => {
         const tag = await ctx.db.get(tagId);
         if (tag) await ctx.db.patch(tagId, { usageCount: tag.usageCount + 1 });
       })
@@ -586,10 +591,8 @@ export const updateIdea = mutation({
     screenshotIds: v.optional(v.array(v.id("_storage"))),
     coverImageId: v.optional(v.id("_storage")),
     priceCodeBase: v.optional(v.number()),
-    priceExclusive: v.optional(v.number()),
     priceCustomization: v.optional(v.number()),
     polarProductId: v.optional(v.string()),
-    polarExclusiveProductId: v.optional(v.string()),
     visibility: v.optional(
       v.union(
         v.literal("public"),
@@ -597,8 +600,16 @@ export const updateIdea = mutation({
         v.literal("paid_only")
       )
     ),
+    status: v.optional(
+      v.union(
+        v.literal("draft"),
+        v.literal("review"),
+        v.literal("published"),
+        v.literal("archived"),
+        v.literal("sold_out")
+      )
+    ),
     isFeatured: v.optional(v.boolean()),
-    isExclusive: v.optional(v.boolean()),
     isNew: v.optional(v.boolean()),
     metaTitle: v.optional(v.string()),
     metaDescription: v.optional(v.string()),
@@ -776,10 +787,9 @@ export const reorderIdeaSections = mutation({
 // MUTATIONS — view tracking (internal so it can be called from server action)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const recordView = internalMutation({
+export const recordIdeaView = mutation({
   args: {
     ideaId: v.id("ideas"),
-    userId: v.optional(v.id("users")),
     sessionId: v.string(),
     referrer: v.optional(v.string()),
     utmSource: v.optional(v.string()),
@@ -789,7 +799,7 @@ export const recordView = internalMutation({
     device: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // Deduplicate: one view per session per idea
+    // Deduplicate: one view per session per idea in the last 30 mins
     const existing = await ctx.db
       .query("ideaViews")
       .withIndex("by_idea_created", (q) =>
@@ -800,7 +810,21 @@ export const recordView = internalMutation({
 
     if (existing) return;
 
-    await ctx.db.insert("ideaViews", { ...args, createdAt: now() });
+    const identity = await ctx.auth.getUserIdentity();
+    let userId: Id<"users"> | undefined;
+    if (identity) {
+      const user = await ctx.db
+        .query("users")
+        .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+        .unique();
+      if (user) userId = user._id;
+    }
+
+    await ctx.db.insert("ideaViews", {
+      ...args,
+      userId,
+      createdAt: now(),
+    });
 
     // Increment denormalized counter
     const idea = await ctx.db.get(args.ideaId);
@@ -897,6 +921,20 @@ export const getSavedIdeas = query({
     );
 
     return { ...page, page: ideas.filter(Boolean) };
+  },
+});
+
+export const recordDemoClick = mutation({
+  args: {
+    ideaId: v.id("ideas"),
+  },
+  handler: async (ctx, { ideaId }) => {
+    const idea = await ctx.db.get(ideaId);
+    if (!idea) throw new Error("Idea not found");
+    
+    await ctx.db.patch(ideaId, {
+      demoClickCount: (idea.demoClickCount ?? 0) + 1,
+    });
   },
 });
 

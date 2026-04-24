@@ -1,7 +1,7 @@
 "use client";
 
-import { useQuery } from "convex/react";
-import { api } from "../../../../../../convex/_generated/api";
+import { useConvexAuth, useQuery } from "convex/react";
+import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,12 +9,14 @@ import { Search, Users, Shield, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
+import { api } from "../../../../../convex/_generated/api";
 
 export default function AdminUsersPage() {
+  const { isAuthenticated } = useConvexAuth();
   const [search, setSearch] = useState("");
-  const users = useQuery(api.admin.listUsers, {
+  const users = useQuery(api.users.adminListUsers, isAuthenticated ? {
     paginationOpts: { numItems: 50, cursor: null },
-  });
+  } : "skip");
 
   if (users === undefined) {
     return (
@@ -25,8 +27,8 @@ export default function AdminUsersPage() {
     );
   }
 
-  // Basic client filtering
-  const filtered = users.page.filter((u) => {
+  // Filter logic
+  const filteredUsers = users.page.filter((u: any) => {
     const s = search.toLowerCase();
     return (
       u.name?.toLowerCase().includes(s) ||
@@ -63,7 +65,7 @@ export default function AdminUsersPage() {
       {/* Table */}
       <div className="rounded-2xl border border-border/60 overflow-hidden bg-card">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full text-sm text-left border-collapse">
             <thead className="text-xs uppercase bg-muted/50 text-muted-foreground">
               <tr>
                 <th className="px-6 py-4 font-semibold">User</th>
@@ -74,7 +76,7 @@ export default function AdminUsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
-              {filtered.length === 0 ? (
+              {filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
                     <Users className="w-8 h-8 mx-auto mb-3 opacity-20" />
@@ -82,7 +84,7 @@ export default function AdminUsersPage() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((user) => (
+                filteredUsers.map((user: any) => (
                   <tr key={user._id} className="hover:bg-muted/20 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
@@ -127,7 +129,7 @@ export default function AdminUsersPage() {
         </div>
         
         <div className="px-6 py-4 border-t border-border/60 bg-muted/10 flex items-center justify-between text-xs text-muted-foreground">
-          Showing {filtered.length} user{filtered.length !== 1 ? 's' : ''}
+          Showing {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}
           {users.isDone === false && (
             <Button variant="outline" size="sm" className="h-7 text-xs">Load More</Button>
           )}

@@ -16,8 +16,8 @@ export default function AdminEditIdeaPage() {
   const { ideaId } = useParams<{ ideaId: Id<"ideas"> }>();
   const router = useRouter();
 
-  const idea = useQuery(api.ideas.getIdeaById, { ideaId });
-  const categories = useQuery(api.categories.listCategories);
+  const idea = useQuery(api.ideas.adminGetIdea, { ideaId });
+  const categories = useQuery(api.categories.listCategories, {});
   const updateIdea = useMutation(api.ideas.updateIdea);
 
   const [saving, setSaving] = useState(false);
@@ -28,11 +28,11 @@ export default function AdminEditIdeaPage() {
   const [categoryId, setCategoryId] = useState("");
   const [difficulty, setDifficulty] = useState<"beginner" | "intermediate" | "advanced">("intermediate");
   const [roiPotential, setRoiPotential] = useState<"low" | "medium" | "high" | "very_high">("high");
+  const [demoUrl, setDemoUrl] = useState("");
   
   // Pricing
   const [priceCodeBase, setPriceCodeBase] = useState("");
   const [priceCustomization, setPriceCustomization] = useState("");
-  const [priceExclusive, setPriceExclusive] = useState("");
 
   // Status flags
   const [isPublished, setIsPublished] = useState(false);
@@ -41,6 +41,8 @@ export default function AdminEditIdeaPage() {
   // Image upload state
   const [coverImageId, setCoverImageId] = useState<Id<"_storage"> | undefined>();
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+  const [screenshotIds, setScreenshotIds] = useState<Id<"_storage">[]>([]);
+  const [screenshotUrls, setScreenshotUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const generateUploadUrl = useMutation(api.storage.generateIdeaMediaUploadUrl);
 
@@ -51,12 +53,14 @@ export default function AdminEditIdeaPage() {
       setCategoryId(idea.categoryId || "");
       setDifficulty(idea.difficulty);
       setRoiPotential(idea.roiPotential);
+      setDemoUrl(idea.demoUrl || "");
       setPriceCodeBase(idea.priceCodeBase !== undefined ? (idea.priceCodeBase / 100).toString() : "");
       setPriceCustomization(idea.priceCustomization !== undefined ? (idea.priceCustomization / 100).toString() : "");
-      setPriceExclusive(idea.priceExclusive !== undefined ? (idea.priceExclusive / 100).toString() : "");
-      setIsPublished(idea.isPublished);
+      setIsPublished(idea.status === "published");
       setIsFeatured(idea.isFeatured);
       setCoverImageId(idea.coverImageId);
+      setScreenshotIds(idea.screenshotIds ?? []);
+      setScreenshotUrls((idea.screenshotUrls ?? []).filter((url: any): url is string => url !== null));
     }
   }, [idea]);
 
@@ -109,6 +113,46 @@ export default function AdminEditIdeaPage() {
     }
   }
 
+  async function handleScreenshotUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    try {
+      const newIds = [...screenshotIds];
+      const newUrls = [...screenshotUrls];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const postUrl = await generateUploadUrl();
+        const result = await fetch(postUrl, {
+          method: "POST",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+        const { storageId } = await result.json();
+        newIds.push(storageId);
+        newUrls.push(URL.createObjectURL(file)); 
+      }
+      setScreenshotIds(newIds);
+      setScreenshotUrls(newUrls);
+      toast.success("Screenshots uploaded!");
+    } catch (err: any) {
+      toast.error("Upload failed: " + err.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function removeScreenshot(index: number) {
+    const newIds = [...screenshotIds];
+    const newUrls = [...screenshotUrls];
+    newIds.splice(index, 1);
+    newUrls.splice(index, 1);
+    setScreenshotIds(newIds);
+    setScreenshotUrls(newUrls);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || saving) return;
@@ -122,12 +166,13 @@ export default function AdminEditIdeaPage() {
         categoryId: categoryId ? (categoryId as Id<"categories">) : undefined,
         difficulty,
         roiPotential,
+        demoUrl: demoUrl.trim() || undefined,
         priceCodeBase: priceCodeBase ? parseInt(priceCodeBase) * 100 : undefined,
         priceCustomization: priceCustomization ? parseInt(priceCustomization) * 100 : undefined,
-        priceExclusive: priceExclusive ? parseInt(priceExclusive) * 100 : undefined,
-        isPublished,
+        status: isPublished ? "published" : "draft",
         isFeatured,
         coverImageId,
+        screenshotIds,
       });
       
       toast.success("Idea updated successfully");
@@ -150,7 +195,7 @@ export default function AdminEditIdeaPage() {
             <h1 className="text-3xl font-bold tracking-tight">Edit Details: {idea.title}</h1>
             <div className="flex items-center gap-3 mt-2">
               <span className="text-muted-foreground text-sm font-mono">Slug: {idea.slug}</span>
-              {idea.isPublished && (
+              {idea.status === "published" && (
                 <a href={`/ideas/${idea.slug}`} target="_blank" rel="noopener noreferrer" className="text-primary text-sm flex items-center gap-1 hover:underline">
                   View Live <ExternalLink className="w-3.5 h-3.5" />
                 </a>
@@ -233,6 +278,23 @@ export default function AdminEditIdeaPage() {
               />
             </div>
 
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium flex items-center justify-between">
+                Live Demo URL
+                {idea.demoClickCount !== undefined && (
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                    Clicks: {idea.demoClickCount}
+                  </span>
+                )}
+              </label>
+              <Input 
+                placeholder="https://your-demo-app.com" 
+                value={demoUrl} 
+                onChange={(e) => setDemoUrl(e.target.value)} 
+                className="rounded-xl"
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Category</label>
@@ -242,7 +304,7 @@ export default function AdminEditIdeaPage() {
                   onChange={(e) => setCategoryId(e.target.value)}
                 >
                   <option value="">Select a category...</option>
-                  {categories?.map((c) => (
+                  {categories?.map((c: any) => (
                     <option key={c._id} value={c._id}>{c.icon} {c.name}</option>
                   ))}
                 </select>
@@ -338,6 +400,59 @@ export default function AdminEditIdeaPage() {
           </div>
         </div>
 
+        {/* Multi-Image Gallery Upload */}
+        <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
+          <div className="p-5 border-b border-border/60 bg-muted/20 flex items-center justify-between">
+            <h2 className="font-semibold text-sm">Screenshot Gallery</h2>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Multiple Images</p>
+          </div>
+          <div className="p-6 space-y-4">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              These images will be displayed in the gallery on the idea details page.
+            </p>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {screenshotUrls.map((url, i) => (
+                <div key={i} className="aspect-video rounded-xl overflow-hidden border border-border/40 relative group">
+                  <img src={url} alt={`Screenshot ${i+1}`} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Button 
+                      type="button" 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => removeScreenshot(i)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              <div 
+                className="aspect-video rounded-xl border-2 border-dashed border-border/60 hover:border-primary/50 bg-muted/10 hover:bg-primary/5 transition-colors flex flex-col items-center justify-center cursor-pointer relative"
+                onClick={() => document.getElementById("gallery-upload")?.click()}
+              >
+                {uploading ? (
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                ) : (
+                  <>
+                    <Layout className="w-6 h-6 text-muted-foreground mb-2" />
+                    <span className="text-xs font-medium text-muted-foreground">Add Images</span>
+                  </>
+                )}
+                <input 
+                  id="gallery-upload" 
+                  type="file" 
+                  accept="image/*" 
+                  multiple
+                  className="hidden" 
+                  onChange={handleScreenshotUpload} 
+                  disabled={uploading}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
           <div className="p-5 border-b border-border/60 bg-muted/20">
             <h2 className="font-semibold text-sm">Pricing (USD)</h2>
@@ -368,20 +483,6 @@ export default function AdminEditIdeaPage() {
                   value={priceCustomization} 
                   onChange={(e) => setPriceCustomization(e.target.value)} 
                   className="rounded-xl pl-9 border-primary/30 focus-visible:ring-primary/30"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium flex items-center gap-1.5 text-violet-500">
-                Exclusive Rights
-              </label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input 
-                  type="number" min="0" 
-                  value={priceExclusive} 
-                  onChange={(e) => setPriceExclusive(e.target.value)} 
-                  className="rounded-xl pl-9 border-violet-500/30 focus-visible:ring-violet-500/30"
                 />
               </div>
             </div>

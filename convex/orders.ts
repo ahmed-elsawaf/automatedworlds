@@ -36,7 +36,6 @@ export const createOrderFromPolar = internalMutation({
     ideaId: v.id("ideas"),
     type: v.union(
       v.literal("code_purchase"),
-      v.literal("exclusive_license"),
       v.literal("customization_deposit")
     ),
     amountTotal: v.number(),
@@ -84,8 +83,6 @@ export const createOrderFromPolar = internalMutation({
     if (idea) {
       await ctx.db.patch(args.ideaId, {
         purchaseCount: idea.purchaseCount + 1,
-        // If exclusive, mark sold out
-        ...(args.type === "exclusive_license" ? { status: "sold_out" } : {}),
       });
     }
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useUser } from "@clerk/nextjs";
+import { useConvexAuth, useQuery } from "convex/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -59,8 +60,9 @@ const PIE_COLORS = ["oklch(0.65 0.24 292)", "oklch(0.73 0.17 201)", "oklch(0.72 
 
 /* ─── Page ───────────────────────────────────────────────────────────────── */
 export default function AdminDashboard() {
-  const stats = useQuery(api.admin.getDashboardStats);
-  const revenue = useQuery(api.orders.getRevenueSummary, { days: 30 });
+  const { isAuthenticated, isLoading: isAuthLoading } = useConvexAuth();
+  const stats = useQuery(api.admin.getDashboardStats, isAuthenticated ? {} : "skip");
+  const revenue = useQuery(api.orders.getRevenueSummary, isAuthenticated ? { days: 30 } : "skip");
 
   const revenueByDay = revenue
     ? Object.entries(revenue.byDay)

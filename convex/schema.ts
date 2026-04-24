@@ -123,7 +123,6 @@ export default defineSchema({
       v.literal("paid_only")      // requires plan
     ),
     isFeatured:    v.boolean(),
-    isExclusive:   v.boolean(),   // only one buyer allowed (full exclusivity)
     isNew:         v.boolean(),   // badge for first 14 days
 
     // ── Research & Validation ─────────────────────────────────────────────
@@ -175,16 +174,15 @@ export default defineSchema({
     // ── Monetization / Pricing ────────────────────────────────────────────
     // Each idea can have multiple purchase options
     priceCodeBase:       v.optional(v.number()),  // USD cents — buy the code
-    priceExclusive:      v.optional(v.number()),  // USD cents — exclusive license
     priceCustomization:  v.optional(v.number()),  // USD cents — starting price for custom work
 
     polarProductId:      v.optional(v.string()),  // code purchase product
-    polarExclusiveProductId: v.optional(v.string()),
 
     // ── Engagement Metrics (denormalized) ────────────────────────────────
     viewCount:     v.number(),
     saveCount:     v.number(),
     purchaseCount: v.number(),
+    demoClickCount:v.optional(v.number()),
     rating:        v.optional(v.number()),   // 0–5, avg of reviews
     reviewCount:   v.number(),
 
@@ -412,7 +410,7 @@ export default defineSchema({
   reviews: defineTable({
     ideaId:   v.id("ideas"),
     userId:   v.id("users"),
-    orderId:  v.id("orders"),
+    orderId:  v.optional(v.id("orders")),
 
     rating:   v.number(),             // 1–5
     title:    v.optional(v.string()),

@@ -1,14 +1,15 @@
 "use client";
 
 import { useQuery } from "convex/react";
-import { api } from "../../../../../../convex/_generated/api";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, ShoppingBag, ArrowRight, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import { format } from "date-fns";
+import { api } from "../../../../../convex/_generated/api";
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
   paid:     { label: "Paid",     className: "bg-emerald-500/15 text-emerald-500 border-emerald-500/20" },
@@ -23,10 +24,11 @@ function fmt(cents: number) {
 }
 
 export default function AdminOrdersPage() {
+  const { isLoaded, isSignedIn } = useUser();
   const [search, setSearch] = useState("");
-  const orders = useQuery(api.admin.listOrders, {
+  const orders = useQuery(api.orders.adminListOrders, isLoaded && isSignedIn ? {
     paginationOpts: { numItems: 50, cursor: null },
-  });
+  } : "skip");
 
   if (orders === undefined) {
     return (
@@ -38,7 +40,7 @@ export default function AdminOrdersPage() {
   }
 
   // Basic client filtering
-  const filtered = orders.page.filter((o) => {
+  const filtered = orders.page.filter((o: any) => {
     const s = search.toLowerCase();
     return o.polarCheckoutId?.toLowerCase().includes(s) || 
            o._id.toLowerCase().includes(s);
@@ -92,7 +94,7 @@ export default function AdminOrdersPage() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((o) => {
+                filtered.map((o: any) => {
                   const s = STATUS_MAP[o.status] ?? { label: o.status, className: "bg-slate-500/10 text-slate-400" };
                   const idea = (o as any).idea;
                   const user = (o as any).user;

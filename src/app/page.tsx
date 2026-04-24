@@ -81,14 +81,6 @@ const PURCHASE_OPTIONS = [
     badgeColor: "bg-cyan-500/15 text-cyan-400",
     color: "border-cyan-500/20 hover:border-cyan-500/40",
   },
-  {
-    icon: Crown,
-    title: "Exclusive License",
-    description: "Be the only owner. We remove the idea from the marketplace so no one else can build competing with your exact concept.",
-    badge: "Premium",
-    badgeColor: "bg-amber-500/15 text-amber-400",
-    color: "border-amber-500/20 hover:border-amber-500/40",
-  },
 ];
 
 /* ─── Testimonials ──────────────────────────────────────────────────────── */
@@ -211,62 +203,19 @@ export default function LandingPage() {
     <div className="flex flex-col min-h-screen">
       <MarketingNav />
 
-      {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="relative pt-16 pb-14 px-4 overflow-hidden">
-        {/* Ambient glow */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full bg-primary/8 blur-[120px]" />
-          <div className="absolute top-20 left-1/4 w-[300px] h-[300px] rounded-full bg-brand-cyan/5 blur-[80px]" />
-        </div>
-
+      {/* ── Compact Header ────────────────────────────────────────────────── */}
+      <section className="relative pt-8 pb-4 px-4">
         <div className="relative mx-auto max-w-4xl text-center">
-          {/* Pill badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/8 px-4 py-1.5 text-sm text-primary font-medium mb-8">
-            <Zap className="w-3.5 h-3.5" />
-            50+ Ideas Ready to Buy and Launch
-          </div>
-
-          {/* Headline */}
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] mb-6">
-            Buy the idea.{" "}
-            <span className="brand-gradient-text">Launch the product.</span>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+            Buy the Idea. <span className="brand-gradient-text">Launch the Product.</span>
           </h1>
-
-          {/* Sub */}
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-8">
-            Professionally researched SaaS opportunities — every idea comes with
-            full market analysis, a{" "}
-            <span className="text-foreground font-medium">live demo you can test</span>,
-            and ready-to-launch source code. No account needed to browse.
+          <p className="text-sm text-muted-foreground mt-1">
+            Professionally researched SaaS opportunities with live demos and source code.
           </p>
-
-          {/* Reassurance strip */}
-          <div className="flex flex-wrap items-center justify-center gap-5 text-xs text-muted-foreground mb-10">
-            {["Browse freely — no sign-up", "Test live demos instantly", "Buy only when you're ready"].map((t) => (
-              <span key={t} className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                {t}
-              </span>
-            ))}
-          </div>
-
-          {/* Stats bar */}
-          <div className="mx-auto max-w-2xl">
-            <div className="grid grid-cols-3 gap-4">
-              {STATS.map(({ label, value, icon: Icon }) => (
-                <div
-                  key={label}
-                  className="flex flex-col items-center gap-1.5 p-5 rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm"
-                >
-                  <Icon className="w-5 h-5 text-primary mb-1" />
-                  <p className="text-3xl font-extrabold tracking-tight">{value}</p>
-                  <p className="text-xs text-muted-foreground text-center">{label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </section>
+
+
 
       {/* ── Live Browse Section ────────────────────────────────────────────── */}
       <section className="flex-1 border-t border-border/60 bg-muted/20">
@@ -323,7 +272,7 @@ export default function LandingPage() {
                 {categories && categories.length > 0 && (
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-semibold text-muted-foreground w-20 shrink-0">Category</span>
-                    {categories.map((cat) => (
+                    {categories.map((cat: any) => (
                       <FilterPill
                         key={cat._id}
                         label={`${cat.icon ?? ""} ${cat.name}`}
@@ -393,9 +342,9 @@ export default function LandingPage() {
           </div>
 
           {ideas === undefined ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="aspect-[4/5] rounded-3xl border border-border/60 bg-muted animate-pulse" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-12">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="aspect-video rounded-3xl border border-border/60 bg-muted animate-pulse" />
               ))}
             </div>
           ) : ideas.length === 0 ? (
@@ -408,8 +357,8 @@ export default function LandingPage() {
               <Button variant="outline" onClick={clearFilters} className="rounded-xl">Clear filters</Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-              {ideas.map((idea) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-12">
+              {ideas.map((idea: any) => (
                 <IdeaCard key={idea._id} {...(idea as any)} />
               ))}
             </div>
@@ -453,7 +402,7 @@ export default function LandingPage() {
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Buy exactly what you need</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 max-w-3xl mx-auto gap-6">
             {PURCHASE_OPTIONS.map(({ icon: Icon, title, description, badge, badgeColor, color }) => (
               <div
                 key={title}

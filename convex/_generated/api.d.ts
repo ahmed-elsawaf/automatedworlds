@@ -9,6 +9,7 @@
  */
 
 import type * as admin from "../admin.js";
+import type * as ai from "../ai.js";
 import type * as categories from "../categories.js";
 import type * as codeAssets from "../codeAssets.js";
 import type * as customizations from "../customizations.js";
@@ -16,6 +17,7 @@ import type * as discounts from "../discounts.js";
 import type * as helpers from "../helpers.js";
 import type * as http from "../http.js";
 import type * as ideas from "../ideas.js";
+import type * as migrations from "../migrations.js";
 import type * as notifications from "../notifications.js";
 import type * as orders from "../orders.js";
 import type * as polarwebhook from "../polarwebhook.js";
@@ -32,6 +34,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
+  ai: typeof ai;
   categories: typeof categories;
   codeAssets: typeof codeAssets;
   customizations: typeof customizations;
@@ -39,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   helpers: typeof helpers;
   http: typeof http;
   ideas: typeof ideas;
+  migrations: typeof migrations;
   notifications: typeof notifications;
   orders: typeof orders;
   polarwebhook: typeof polarwebhook;

@@ -141,7 +141,6 @@ export const polarWebhook = httpAction(async (ctx, request) => {
         const ideaId = meta.ideaId;
         const orderType = (meta.orderType ?? "code_purchase") as
           | "code_purchase"
-          | "exclusive_license"
           | "customization_deposit";
 
         if (!clerkId || !ideaId) {

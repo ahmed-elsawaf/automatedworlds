@@ -1,25 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "../../../../../../convex/_generated/api";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save, Loader2, DollarSign, Layout } from "lucide-react";
+import { ArrowLeft, Save, Loader2, DollarSign, Layout, Globe } from "lucide-react";
 import { toast } from "sonner";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 
 export default function AdminNewIdeaPage() {
   const router = useRouter();
   const createIdea = useMutation(api.ideas.createIdea);
-  const categories = useQuery(api.categories.listCategories);
+  const generateIdeaFromUrl = useAction(api.ai.generateIdeaFromUrl);
+  const categories = useQuery(api.categories.listCategories, {});
   const generateUploadUrl = useMutation(api.storage.generateIdeaMediaUploadUrl);
 
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [uploading, setUploading] = useState(false);
+  
+  const [importUrl, setImportUrl] = useState("");
   
   // Form state
   const [title, setTitle] = useState("");
@@ -63,23 +67,53 @@ export default function AdminNewIdeaPage() {
   // Pricing
   const [priceCodeBase, setPriceCodeBase] = useState("99");
   const [priceCustomization, setPriceCustomization] = useState("1499");
-  const [priceExclusive, setPriceExclusive] = useState("4999");
+
+  async function handleGenerate() {
+    if (!importUrl.trim()) {
+      toast.error("Please enter a URL to import.");
+      return;
+    }
+    if (!categoryId) {
+      toast.error("Please select a category first.");
+      return;
+    }
+    
+    setGenerating(true);
+    toast.info("Scraping URL and generating idea... This may take up to 30 seconds.");
+    
+    try {
+      const id = await generateIdeaFromUrl({
+        url: importUrl.trim(),
+        categoryId: categoryId as Id<"categories">,
+        difficulty,
+        roiPotential,
+      });
+      toast.success("Idea generated successfully!");
+      router.push(`/admin/ideas/${id}`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to generate idea from URL.");
+      setGenerating(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || saving) return;
+    if (!categoryId) {
+      toast.error("Please select a category first.");
+      return;
+    }
 
     setSaving(true);
     try {
       const id = await createIdea({
         title: title.trim(),
         tagline: tagline.trim() || undefined,
-        categoryId: categoryId ? (categoryId as Id<"categories">) : undefined,
+        categoryId: categoryId as Id<"categories">,
         difficulty,
         roiPotential,
         priceCodeBase: priceCodeBase ? parseInt(priceCodeBase) * 100 : 0,
         priceCustomization: priceCustomization ? parseInt(priceCustomization) * 100 : 0,
-        priceExclusive: priceExclusive ? parseInt(priceExclusive) * 100 : 0,
         coverImageId,
       });
       
@@ -104,6 +138,39 @@ export default function AdminNewIdeaPage() {
             <p className="text-muted-foreground text-sm mt-1">
               Draft a new SaaS opportunity. You can add content sections later.
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* AI Import Tool */}
+      <div className="rounded-2xl border border-violet-500/30 bg-violet-500/5 overflow-hidden">
+        <div className="p-5 border-b border-violet-500/10 bg-violet-500/10 flex items-center justify-between">
+          <h2 className="font-semibold text-sm flex items-center gap-2 text-violet-600 dark:text-violet-400">
+            <Globe className="w-4 h-4" /> Import SaaS from URL (AI)
+          </h2>
+        </div>
+        <div className="p-6 space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Enter a SaaS website URL. Our AI will scrape the site and automatically generate the idea details, pricing, and sections. 
+            <strong className="text-foreground ml-1">Make sure to select a Category below first!</strong>
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Input 
+              placeholder="https://example-saas.com" 
+              value={importUrl} 
+              onChange={(e) => setImportUrl(e.target.value)} 
+              className="rounded-xl flex-1 bg-background"
+              disabled={generating || saving}
+            />
+            <Button 
+              type="button" 
+              onClick={handleGenerate}
+              disabled={generating || saving} 
+              className="rounded-xl gap-2 bg-violet-600 hover:bg-violet-700 text-white w-full sm:w-auto"
+            >
+              {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />}
+              {generating ? "Generating..." : "Generate via AI"}
+            </Button>
           </div>
         </div>
       </div>
@@ -272,20 +339,6 @@ export default function AdminNewIdeaPage() {
                   value={priceCustomization} 
                   onChange={(e) => setPriceCustomization(e.target.value)} 
                   className="rounded-xl pl-9 border-primary/30 focus-visible:ring-primary/30"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium flex items-center gap-1.5 text-violet-500">
-                Exclusive Rights
-              </label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input 
-                  type="number" min="0" 
-                  value={priceExclusive} 
-                  onChange={(e) => setPriceExclusive(e.target.value)} 
-                  className="rounded-xl pl-9 border-violet-500/30 focus-visible:ring-violet-500/30"
                 />
               </div>
             </div>
