@@ -180,3 +180,59 @@ Make the output professional, detailed, and highly persuasive.
     return ideaId;
   },
 });
+
+export const generateSocialPost = action({
+  args: {
+    ideaId: v.id("ideas"),
+    platform: v.literal("facebook"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+
+    const idea = await ctx.runQuery(api.ideas.adminGetIdea, { ideaId: args.ideaId });
+    if (!idea) throw new Error("Idea not found");
+
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+
+    const prompt = `
+You are a world-class SaaS Acquisition Specialist. Your goal is to generate a high-converting Facebook post for an entrepreneur or investor to ACQUIRE the following SaaS business/codebase:
+
+Title: ${idea.title}
+Tagline: ${idea.tagline}
+Description: ${idea.description || "N/A"}
+Problem: ${idea.problemStatement || "N/A"}
+Solution: ${idea.solutionOverview || "N/A"}
+
+Requirements:
+1. Person: You are selling the ASSET (the code and the business), not the service.
+2. Hook: Start with why this is a massive business opportunity or a high-ROI acquisition.
+3. The Product: Briefly explain what the SaaS does so the buyer understands the value.
+4. Acquisition Value: Mention what's included (Full Source Code, Rights, Scalable Backend, etc.).
+5. Monetization: Mention how the new owner will make money (Subscriptions, API credits, etc.).
+6. Bullets: Use max 5 bullets to highlight technical/business strengths.
+7. CTA: A clear call to action to "Acquire the full source code today".
+8. Tone: Entrepreneurial, professional, and opportunistic.
+9. Image: Provide a "headline_short" (max 35 chars) and a "tagline_short" (max 50 chars) for a marketing image.
+
+Output as JSON (no markdown):
+{
+  "postText": "the full post content",
+  "imageHeadline": "short headline for image",
+  "imageTagline": "short tagline for image"
+}
+`;
+
+    const result = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    if (!result.text) throw new Error("AI failed to generate content");
+    const response = JSON.parse(result.text);
+    return response;
+  },
+});

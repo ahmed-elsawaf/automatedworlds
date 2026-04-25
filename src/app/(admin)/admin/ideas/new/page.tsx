@@ -66,7 +66,8 @@ export default function AdminNewIdeaPage() {
 
   // Pricing
   const [priceCodeBase, setPriceCodeBase] = useState("99");
-  const [priceCustomization, setPriceCustomization] = useState("1499");
+  const [priceCustomization, setPriceCustomization] = useState("299");
+  const [gumroadUrl, setGumroadUrl] = useState("");
 
   async function handleGenerate() {
     if (!importUrl.trim()) {
@@ -115,6 +116,7 @@ export default function AdminNewIdeaPage() {
         priceCodeBase: priceCodeBase ? parseInt(priceCodeBase) * 100 : 0,
         priceCustomization: priceCustomization ? parseInt(priceCustomization) * 100 : 0,
         coverImageId,
+        gumroadProductUrl: gumroadUrl,
       });
       
       toast.success("Idea created successfully");
@@ -341,6 +343,17 @@ export default function AdminNewIdeaPage() {
                   className="rounded-xl pl-9 border-primary/30 focus-visible:ring-primary/30"
                 />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium flex items-center gap-1.5">
+                Gumroad Product URL
+              </label>
+              <Input
+                placeholder="https://gumroad.com/l/your-product"
+                value={gumroadUrl}
+                onChange={(e) => setGumroadUrl(e.target.value)}
+                className="rounded-xl"
+              />
             </div>
           </div>
         </div>

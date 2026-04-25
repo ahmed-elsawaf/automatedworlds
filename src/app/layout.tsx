@@ -18,20 +18,59 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://automatedworlds.com"),
   title: {
     default: "AutomatedWorlds — Buy SaaS Ideas, Ready to Launch",
     template: "%s | AutomatedWorlds",
   },
   description:
     "Discover professionally researched SaaS ideas. Every idea comes with full market analysis, live demo, and ready-to-launch source code. Browse, buy, and start making money.",
-  keywords: ["SaaS ideas", "startup ideas", "buy source code", "SaaS marketplace"],
+  keywords: [
+    "SaaS ideas",
+    "startup ideas",
+    "buy source code",
+    "SaaS marketplace",
+    "MVP code",
+    "business opportunities",
+    "entrepreneurship",
+  ],
+  authors: [{ name: "AutomatedWorlds Team" }],
+  creator: "AutomatedWorlds",
+  publisher: "AutomatedWorlds",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
     url: "https://automatedworlds.com",
     siteName: "AutomatedWorlds",
+    title: "AutomatedWorlds — Buy SaaS Ideas, Ready to Launch",
+    description: "Launch your next SaaS in minutes with our researched ideas and ready-to-use source code.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "AutomatedWorlds — SaaS Marketplace",
+      },
+    ],
   },
-  twitter: { card: "summary_large_image" },
+  twitter: {
+    card: "summary_large_image",
+    title: "AutomatedWorlds — Buy SaaS Ideas",
+    description: "Launch your next SaaS in minutes with our researched ideas and ready-to-use source code.",
+    creator: "@automatedworlds",
+    images: ["/twitter-image.png"],
+  },
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon-16x16.png",
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({

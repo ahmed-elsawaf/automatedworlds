@@ -33,6 +33,7 @@ export default function AdminEditIdeaPage() {
   // Pricing
   const [priceCodeBase, setPriceCodeBase] = useState("");
   const [priceCustomization, setPriceCustomization] = useState("");
+  const [gumroadUrl, setGumroadUrl] = useState("");
 
   // Status flags
   const [isPublished, setIsPublished] = useState(false);
@@ -56,6 +57,7 @@ export default function AdminEditIdeaPage() {
       setDemoUrl(idea.demoUrl || "");
       setPriceCodeBase(idea.priceCodeBase !== undefined ? (idea.priceCodeBase / 100).toString() : "");
       setPriceCustomization(idea.priceCustomization !== undefined ? (idea.priceCustomization / 100).toString() : "");
+      setGumroadUrl(idea.gumroadProductUrl || "");
       setIsPublished(idea.status === "published");
       setIsFeatured(idea.isFeatured);
       setCoverImageId(idea.coverImageId);
@@ -173,6 +175,7 @@ export default function AdminEditIdeaPage() {
         isFeatured,
         coverImageId,
         screenshotIds,
+        gumroadProductUrl: gumroadUrl,
       });
       
       toast.success("Idea updated successfully");
@@ -485,6 +488,17 @@ export default function AdminEditIdeaPage() {
                   className="rounded-xl pl-9 border-primary/30 focus-visible:ring-primary/30"
                 />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium flex items-center gap-1.5">
+                Gumroad Product URL
+              </label>
+              <Input
+                placeholder="https://gumroad.com/l/your-product"
+                value={gumroadUrl}
+                onChange={(e) => setGumroadUrl(e.target.value)}
+                className="rounded-xl"
+              />
             </div>
           </div>
         </div>

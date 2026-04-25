@@ -42,6 +42,7 @@ const NAV_GROUPS = [
     items: [
       { label: "Ideas", href: "/admin/ideas", icon: Lightbulb },
       { label: "Categories", href: "/admin/categories", icon: FolderOpen },
+      { label: "Social Gen", href: "/admin/social", icon: Zap },
     ],
   },
   {

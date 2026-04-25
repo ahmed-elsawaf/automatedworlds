@@ -145,6 +145,7 @@ export default function IdeaDetailPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const idea = useQuery(api.ideas.getIdeaBySlug, { slug, sessionId });
+  const gumroadUrl = idea?.gumroadProductUrl;
   const related = useQuery(
     api.ideas.getRelatedIdeas,
     idea ? { ideaId: idea._id, limit: 3 } : "skip"
@@ -191,6 +192,10 @@ export default function IdeaDetailPage() {
   }
 
   function handleBuy(type: string) {
+    if (gumroadUrl) {
+      window.open(gumroadUrl, "_blank");
+      return;
+    }
     toast.info(`Purchase flow for "${type}" coming soon!`);
   }
 

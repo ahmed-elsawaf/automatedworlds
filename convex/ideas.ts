@@ -326,6 +326,17 @@ export const getRelatedIdeas = query({
   },
 });
 
+/** Get all published ideas for sitemap generation. */
+export const listAllPublishedIdeas = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("ideas")
+      .withIndex("by_status", (q) => q.eq("status", "published"))
+      .collect();
+  },
+});
+
 /** Admin: get a single idea by ID regardless of status. */
 export const adminGetIdea = query({
   args: { ideaId: v.id("ideas") },
@@ -438,6 +449,7 @@ export const createIdea = mutation({
     priceCodeBase: v.optional(v.number()),
     priceCustomization: v.optional(v.number()),
     polarProductId: v.optional(v.string()),
+    gumroadProductUrl: v.optional(v.string()),
     visibility: v.optional(
       v.union(
         v.literal("public"),
@@ -490,6 +502,7 @@ export const createIdea = mutation({
       priceCodeBase: args.priceCodeBase,
       priceCustomization: args.priceCustomization,
       polarProductId: args.polarProductId,
+      gumroadProductUrl: args.gumroadProductUrl,
       visibility: args.visibility ?? "public",
       status: "draft",
       isFeatured: args.isFeatured ?? false,
@@ -600,6 +613,7 @@ export const updateIdea = mutation({
         v.literal("paid_only")
       )
     ),
+    gumroadProductUrl: v.optional(v.string()),
     status: v.optional(
       v.union(
         v.literal("draft"),
