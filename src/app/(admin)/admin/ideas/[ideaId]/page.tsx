@@ -8,7 +8,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save, Loader2, DollarSign, Layout, ExternalLink, Globe } from "lucide-react";
+import { ArrowLeft, Save, Loader2, DollarSign, Layout, ExternalLink, Globe, Sparkles } from "lucide-react";
+import { useAction, useConvexAuth } from "convex/react";
 import { toast } from "sonner";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 
@@ -16,11 +17,14 @@ export default function AdminEditIdeaPage() {
   const { ideaId } = useParams<{ ideaId: Id<"ideas"> }>();
   const router = useRouter();
 
-  const idea = useQuery(api.ideas.adminGetIdea, { ideaId });
-  const categories = useQuery(api.categories.listCategories, {});
+  const { isAuthenticated } = useConvexAuth();
+  const idea = useQuery(api.ideas.adminGetIdea, isAuthenticated ? { ideaId } : "skip");
+  const categories = useQuery(api.categories.listCategories, isAuthenticated ? {} : "skip");
   const updateIdea = useMutation(api.ideas.updateIdea);
+  const enhanceIdea = useAction(api.ai.enhanceIdea);
 
   const [saving, setSaving] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
   
   // Form state
   const [title, setTitle] = useState("");
@@ -34,6 +38,7 @@ export default function AdminEditIdeaPage() {
   const [priceCodeBase, setPriceCodeBase] = useState("");
   const [priceCustomization, setPriceCustomization] = useState("");
   const [gumroadUrl, setGumroadUrl] = useState("");
+  const [gumroadCustomizationUrl, setGumroadCustomizationUrl] = useState("");
 
   // Status flags
   const [isPublished, setIsPublished] = useState(false);
@@ -58,6 +63,7 @@ export default function AdminEditIdeaPage() {
       setPriceCodeBase(idea.priceCodeBase !== undefined ? (idea.priceCodeBase / 100).toString() : "");
       setPriceCustomization(idea.priceCustomization !== undefined ? (idea.priceCustomization / 100).toString() : "");
       setGumroadUrl(idea.gumroadProductUrl || "");
+      setGumroadCustomizationUrl(idea.gumroadCustomizationUrl || "");
       setIsPublished(idea.status === "published");
       setIsFeatured(idea.isFeatured);
       setCoverImageId(idea.coverImageId);
@@ -146,6 +152,24 @@ export default function AdminEditIdeaPage() {
     }
   }
 
+  async function handleEnhance() {
+    if (!confirm("Are you sure? This will overwrite the title, tagline, description and sections with AI-generated content.")) return;
+    
+    setEnhancing(true);
+    toast.info("Magic in progress... Rewriting your SaaS idea for maximum persuasion.");
+    
+    try {
+      await enhanceIdea({ ideaId });
+      toast.success("Idea enhanced successfully! Refreshing details...");
+      // The Convex action updates the DB, we just need to wait for the query to re-fire or manually reload
+      window.location.reload(); 
+    } catch (err: any) {
+      toast.error("Enhancement failed: " + err.message);
+    } finally {
+      setEnhancing(false);
+    }
+  }
+
   function removeScreenshot(index: number) {
     const newIds = [...screenshotIds];
     const newUrls = [...screenshotUrls];
@@ -170,12 +194,13 @@ export default function AdminEditIdeaPage() {
         roiPotential,
         demoUrl: demoUrl.trim() || undefined,
         priceCodeBase: priceCodeBase ? parseInt(priceCodeBase) * 100 : undefined,
-        priceCustomization: priceCustomization ? parseInt(priceCustomization) * 100 : undefined,
+        priceCustomization: priceCustomization ? parseInt(priceCustomization) * 100 : 0,
         status: isPublished ? "published" : "draft",
         isFeatured,
         coverImageId,
         screenshotIds,
         gumroadProductUrl: gumroadUrl,
+        gumroadCustomizationUrl: gumroadCustomizationUrl,
       });
       
       toast.success("Idea updated successfully");
@@ -206,6 +231,16 @@ export default function AdminEditIdeaPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="rounded-xl gap-2 border-violet-500/30 text-violet-600 hover:bg-violet-50"
+              onClick={handleEnhance}
+              disabled={enhancing || saving}
+            >
+              {enhancing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              Magic Enhance
+            </Button>
             <Button asChild variant="secondary" className="rounded-xl gap-2">
               <Link href={`/admin/ideas/${ideaId}/sections`}>
                 <Layout className="w-4 h-4" /> Edit Content
@@ -460,7 +495,7 @@ export default function AdminEditIdeaPage() {
           <div className="p-5 border-b border-border/60 bg-muted/20">
             <h2 className="font-semibold text-sm">Pricing (USD)</h2>
           </div>
-          <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-1.5">
               <label className="text-sm font-medium flex items-center gap-1.5">
                 Code Base
@@ -477,7 +512,7 @@ export default function AdminEditIdeaPage() {
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium flex items-center gap-1.5 text-primary">
-                Customization
+                Customization (Starting)
               </label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -491,13 +526,24 @@ export default function AdminEditIdeaPage() {
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium flex items-center gap-1.5">
-                Gumroad Product URL
+                Gumroad URL (Source Code)
               </label>
               <Input
-                placeholder="https://gumroad.com/l/your-product"
+                placeholder="https://gumroad.com/l/source-code"
                 value={gumroadUrl}
                 onChange={(e) => setGumroadUrl(e.target.value)}
                 className="rounded-xl"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium flex items-center gap-1.5 text-primary">
+                Gumroad URL (Customization Deposit)
+              </label>
+              <Input
+                placeholder="https://gumroad.com/l/custom-deposit"
+                value={gumroadCustomizationUrl}
+                onChange={(e) => setGumroadCustomizationUrl(e.target.value)}
+                className="rounded-xl border-primary/30"
               />
             </div>
           </div>

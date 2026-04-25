@@ -53,7 +53,7 @@ export default function BlogPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {POSTS.map((post, i) => (
-          <article key={i} className="group flex flex-col rounded-[2rem] border border-border/60 bg-card overflow-hidden hover:border-primary/20 transition-all hover:shadow-xl hover:shadow-primary/5">
+          <article key={i} className="group flex flex-col rounded-4xl border border-border/60 bg-card overflow-hidden hover:border-primary/20 transition-all hover:shadow-xl hover:shadow-primary/5">
             <div className="aspect-video relative overflow-hidden">
                <img 
                  src={post.image} 
@@ -88,7 +88,7 @@ export default function BlogPage() {
       </div>
 
       {/* Newsletter */}
-      <div className="mt-24 rounded-[3rem] border border-border/60 bg-primary/5 p-8 sm:p-16 text-center">
+      <div className="mt-24 rounded-4xl border border-border/60 bg-primary/5 p-8 sm:p-16 text-center">
         <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mx-auto mb-6">
           <BookOpen className="w-8 h-8" />
         </div>

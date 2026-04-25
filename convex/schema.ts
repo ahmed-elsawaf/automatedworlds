@@ -176,6 +176,7 @@ export default defineSchema({
     priceCodeBase:       v.optional(v.number()),  // USD cents — buy the code
     priceCustomization:  v.optional(v.number()),  // USD cents — starting price for custom work
     gumroadProductUrl:   v.optional(v.string()),  // Gumroad product URL for purchase
+    gumroadCustomizationUrl: v.optional(v.string()), // Gumroad product URL for customization deposit
     polarProductId:      v.optional(v.string()),  // code purchase product
 
     // ── Engagement Metrics (denormalized) ────────────────────────────────

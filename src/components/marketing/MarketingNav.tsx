@@ -11,6 +11,7 @@ import { Menu, X, Zap, ChevronRight } from "lucide-react";
 
 const NAV_LINKS = [
   { label: "Browse Ideas", href: "/browse" },
+  { label: "Custom Build", href: "/custom-build" },
   { label: "About", href: "/about" },
 ];
 

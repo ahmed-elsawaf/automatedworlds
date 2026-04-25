@@ -11,7 +11,7 @@ import { AuthPromptBanner } from "@/components/auth/AuthPromptBanner";
 import {
   Eye, Bookmark, ShoppingBag, Star, ArrowRight, ExternalLink,
   Play, Code2, Paintbrush, Crown, CheckCircle2, BookmarkCheck,
-  TrendingUp, Clock, Users, DollarSign, Layout
+  TrendingUp, Clock, Users, DollarSign, Layout, Wrench, Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -145,7 +145,8 @@ export default function IdeaDetailPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const idea = useQuery(api.ideas.getIdeaBySlug, { slug, sessionId });
-  const gumroadUrl = idea?.gumroadProductUrl;
+  const gumroadUrl = idea?.gumroadUrl;
+  const gumroadCustomizationUrl = idea?.gumroadCustomizationUrl;
   const related = useQuery(
     api.ideas.getRelatedIdeas,
     idea ? { ideaId: idea._id, limit: 3 } : "skip"
@@ -191,12 +192,18 @@ export default function IdeaDetailPage() {
     recordIntent({ action, ideaSlug: slug, ideaId: String(idea._id) });
   }
 
-  function handleBuy(type: string) {
-    if (gumroadUrl) {
+  function handleBuy(type: "code" | "custom" | "exclusive") {
+    if (type === "code" && gumroadUrl) {
       window.open(gumroadUrl, "_blank");
       return;
     }
-    toast.info(`Purchase flow for "${type}" coming soon!`);
+    
+    if (type === "custom" && gumroadCustomizationUrl) {
+      window.open(gumroadCustomizationUrl, "_blank");
+      return;
+    }
+
+    toast.info(`Purchase flow for "${type}" coming soon! If you're interested, please contact our support.`);
   }
 
   function handleDemoClick() {
@@ -379,7 +386,31 @@ export default function IdeaDetailPage() {
                       onBuyClick={() => handleBuy("code")}
                     />
                   )}
-                  {idea.priceCustomization && (
+                  
+                  {idea.hasCustomizationRequest ? (
+                    <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-3">
+                      <div className="flex items-center gap-2 text-emerald-500 font-bold text-sm">
+                        <Wrench className="w-4 h-4" /> Custom Build in Progress
+                      </div>
+                      <Button asChild variant="outline" className="w-full rounded-lg gap-2">
+                        <Link href={`/dashboard/customizations`}>
+                          Track Your Build <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </Button>
+                    </div>
+                  ) : (idea as any).customizationOrderId ? (
+                    <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 space-y-3">
+                      <div className="flex items-center gap-2 text-amber-500 font-bold text-sm">
+                        <Sparkles className="w-4 h-4" /> Action Required
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">You've paid the deposit. Complete your brief to start the build.</p>
+                      <Button asChild className="w-full rounded-lg gap-2 brand-gradient border-0 text-white font-bold">
+                        <Link href={`/dashboard/customizations/new?orderId=${(idea as any).customizationOrderId}&ideaId=${idea._id}`}>
+                          Complete Your Brief <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </Button>
+                    </div>
+                  ) : idea.priceCustomization && (
                     <PurchaseOption
                       id="purchase-option-custom"
                       icon={<Paintbrush className="w-4 h-4 text-cyan-400" />}
@@ -388,7 +419,7 @@ export default function IdeaDetailPage() {
                       description="We build it for you"
                       variant="cyan"
                       isGuest={isGuest}
-                      hasPurchased={hasPurchased}
+                      hasPurchased={false}
                       isSoldOut={isSoldOut}
                       onGuestClick={() => handleGuestBuy("buy_custom")}
                       onBuyClick={() => handleBuy("custom")}

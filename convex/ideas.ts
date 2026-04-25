@@ -235,15 +235,34 @@ export const getIdeaBySlug = query({
 
     // Has the current user purchased this?
     let hasPurchased = false;
+    let customizationOrderId: Id<"orders"> | null = null;
+    let hasCustomizationRequest = false;
+
+    // Differentiate between source code purchase and customization deposit in the response.
+    const gumroadUrl = idea.gumroadProductUrl;
+    const gumroadCustomizationUrl = idea.gumroadCustomizationUrl;
+
     if (currentUser) {
-      const order = await ctx.db
+      const orders = await ctx.db
         .query("orders")
         .withIndex("by_user_idea", (q) =>
           q.eq("userId", currentUser!._id).eq("ideaId", idea._id)
         )
         .filter((q) => q.eq(q.field("status"), "paid"))
-        .first();
-      hasPurchased = !!order;
+        .collect();
+
+      hasPurchased = orders.some(o => o.type === "code_purchase");
+      
+      const customOrder = orders.find(o => o.type === "customization_deposit");
+      if (customOrder) {
+        customizationOrderId = customOrder._id;
+        // Check if they already submitted the brief
+        const request = await ctx.db
+          .query("customizationRequests")
+          .withIndex("by_order", (q) => q.eq("orderId", customOrder._id))
+          .first();
+        hasCustomizationRequest = !!request;
+      }
     }
 
     // Has the current user saved this?
@@ -270,9 +289,25 @@ export const getIdeaBySlug = query({
       sections,
       hasPurchased,
       hasSaved,
+      customizationOrderId,
+      hasCustomizationRequest,
+      gumroadUrl,
+      gumroadCustomizationUrl,
       coverImageUrl,
       screenshotUrls,
     };
+  },
+});
+
+/**
+ * Get a single idea by ID.
+ */
+export const getIdeaById = query({
+  args: { ideaId: v.id("ideas") },
+  handler: async (ctx, { ideaId }) => {
+    const idea = await ctx.db.get(ideaId);
+    if (!idea) return null;
+    return idea;
   },
 });
 
@@ -450,6 +485,7 @@ export const createIdea = mutation({
     priceCustomization: v.optional(v.number()),
     polarProductId: v.optional(v.string()),
     gumroadProductUrl: v.optional(v.string()),
+    gumroadCustomizationUrl: v.optional(v.string()),
     visibility: v.optional(
       v.union(
         v.literal("public"),
@@ -503,6 +539,7 @@ export const createIdea = mutation({
       priceCustomization: args.priceCustomization,
       polarProductId: args.polarProductId,
       gumroadProductUrl: args.gumroadProductUrl,
+      gumroadCustomizationUrl: args.gumroadCustomizationUrl,
       visibility: args.visibility ?? "public",
       status: "draft",
       isFeatured: args.isFeatured ?? false,
@@ -614,6 +651,7 @@ export const updateIdea = mutation({
       )
     ),
     gumroadProductUrl: v.optional(v.string()),
+    gumroadCustomizationUrl: v.optional(v.string()),
     status: v.optional(
       v.union(
         v.literal("draft"),

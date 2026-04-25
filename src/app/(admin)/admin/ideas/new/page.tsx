@@ -68,6 +68,7 @@ export default function AdminNewIdeaPage() {
   const [priceCodeBase, setPriceCodeBase] = useState("99");
   const [priceCustomization, setPriceCustomization] = useState("299");
   const [gumroadUrl, setGumroadUrl] = useState("");
+  const [gumroadCustomizationUrl, setGumroadCustomizationUrl] = useState("");
 
   async function handleGenerate() {
     if (!importUrl.trim()) {
@@ -117,6 +118,7 @@ export default function AdminNewIdeaPage() {
         priceCustomization: priceCustomization ? parseInt(priceCustomization) * 100 : 0,
         coverImageId,
         gumroadProductUrl: gumroadUrl,
+        gumroadCustomizationUrl,
       });
       
       toast.success("Idea created successfully");
@@ -315,7 +317,7 @@ export default function AdminNewIdeaPage() {
           <div className="p-5 border-b border-border/60 bg-muted/20">
             <h2 className="font-semibold text-sm">Pricing (USD)</h2>
           </div>
-          <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-1.5">
               <label className="text-sm font-medium flex items-center gap-1.5">
                 Code Base
@@ -332,7 +334,7 @@ export default function AdminNewIdeaPage() {
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium flex items-center gap-1.5 text-primary">
-                Customization
+                Customization (Starting)
               </label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -346,13 +348,24 @@ export default function AdminNewIdeaPage() {
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium flex items-center gap-1.5">
-                Gumroad Product URL
+                Gumroad URL (Source Code)
               </label>
               <Input
-                placeholder="https://gumroad.com/l/your-product"
+                placeholder="https://gumroad.com/l/source-code"
                 value={gumroadUrl}
                 onChange={(e) => setGumroadUrl(e.target.value)}
                 className="rounded-xl"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium flex items-center gap-1.5 text-primary">
+                Gumroad URL (Customization Deposit)
+              </label>
+              <Input
+                placeholder="https://gumroad.com/l/custom-deposit"
+                value={gumroadCustomizationUrl}
+                onChange={(e) => setGumroadCustomizationUrl(e.target.value)}
+                className="rounded-xl border-primary/30"
               />
             </div>
           </div>

@@ -67,7 +67,7 @@ export default function ContactPage() {
 
         {/* Contact Form */}
         <div className="lg:col-span-7">
-          <div className="p-8 sm:p-10 rounded-[2rem] border border-border/60 bg-card shadow-sm">
+          <div className="p-8 sm:p-10 rounded-4xl border border-border/60 bg-card shadow-sm">
             <form className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">

@@ -236,3 +236,105 @@ Output as JSON (no markdown):
     return response;
   },
 });
+
+export const enhanceIdea = action({
+  args: {
+    ideaId: v.id("ideas"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+
+    // 1. Get current idea data
+    const idea = await ctx.runQuery(api.ideas.adminGetIdea, { ideaId: args.ideaId });
+    if (!idea) throw new Error("Idea not found");
+
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+
+    // 2. Build the prompt
+    const prompt = `
+You are a world-class SaaS Acquisition Specialist and Copywriter. Your goal is to ENHANCE an existing SaaS idea to make it extremely persuasive for potential buyers (entrepreneurs and investors).
+
+Current Idea Data:
+- Title: ${idea.title}
+- Tagline: ${idea.tagline}
+- Description: ${idea.description || "N/A"}
+- Target Audience: ${idea.targetAudience || "N/A"}
+- Problem: ${idea.problemStatement || "N/A"}
+- Solution: ${idea.solutionOverview || "N/A"}
+- Unique Value Prop: ${idea.uniqueValueProp || "N/A"}
+- Revenue Model: ${idea.revenueModel || "N/A"}
+
+Requirements:
+1. Rewrite the Title to be punchy and professional.
+2. Rewrite the Tagline to be a high-impact "one-sentence pitch".
+3. Expand the Description into 3-4 professional markdown paragraphs. Focus on the market opportunity and ROI potential.
+4. Deepen the Problem Statement and Solution Overview.
+5. Create/Refine the Unique Value Proposition.
+6. Refine the Revenue Model.
+7. Generate content for two standard sections:
+   - "feature_list": A comprehensive list of at least 5 core features.
+   - "faq": A list of 4-6 common questions a buyer or user might have.
+
+Output as a single JSON object (no markdown code blocks):
+{
+  "title": "...",
+  "tagline": "...",
+  "description": "...",
+  "targetAudience": "...",
+  "problemStatement": "...",
+  "solutionOverview": "...",
+  "uniqueValueProp": "...",
+  "revenueModel": "...",
+  "sections": [
+    { "type": "feature_list", "title": "Core Features", "content": [{"title": "...", "description": "..."}] },
+    { "type": "faq", "title": "Frequently Asked Questions", "content": [{"question": "...", "answer": "..."}] }
+  ]
+}
+
+Note: The "content" field in "sections" should be the raw array of objects (the mutation will stringify it).
+Make the tone professional, opportunistic, and data-driven.
+`;
+
+    const result = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    if (!result.text) throw new Error("AI failed to generate content");
+    const enhanced = JSON.parse(result.text);
+
+    // 3. Update the idea
+    await ctx.runMutation(api.ideas.updateIdea, {
+      ideaId: args.ideaId,
+      title: enhanced.title,
+      tagline: enhanced.tagline,
+      description: enhanced.description,
+      targetAudience: enhanced.targetAudience,
+      problemStatement: enhanced.problemStatement,
+      solutionOverview: enhanced.solutionOverview,
+      uniqueValueProp: enhanced.uniqueValueProp,
+      revenueModel: enhanced.revenueModel,
+    });
+
+    // 4. Update sections
+    if (enhanced.sections && Array.isArray(enhanced.sections)) {
+      for (let i = 0; i < enhanced.sections.length; i++) {
+        const sec = enhanced.sections[i];
+        await ctx.runMutation(api.ideas.upsertIdeaSection, {
+          ideaId: args.ideaId,
+          type: sec.type,
+          title: sec.title,
+          content: JSON.stringify(sec.content),
+          sortOrder: i + 10, // Put these after initial content if any
+          isVisible: true,
+        });
+      }
+    }
+
+    return { success: true };
+  },
+});
